@@ -1,0 +1,22 @@
+name: Attach verified SmartLine installer
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  attach:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and attach installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(find release-parts -maxdepth 1 -type f -name 'part-*' | wc -l)" -eq 14
+          output="$RUNNER_TEMP/SmartLine-0.15.10-Setup-x64-unsigned.exe"
+          cat release-parts/part-* > "$output"
+          test "$(stat -c %s "$output")" -eq 58629800
+          echo "2860985eb93e21de9f654237905f57b63fef8f1162f97e7acb2c4beba30e60b6  $output" | sha256sum --check --status
+          gh release upload v0.15.10-rc1 "$output" --repo "$GITHUB_REPOSITORY"
